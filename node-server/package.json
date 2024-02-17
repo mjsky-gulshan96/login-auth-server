@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "engines": {
+    "node": "18.12.1"
+  },
   "scripts": {
     "start": "nodemon index.js"
   },
@@ -16,9 +19,14 @@
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.3.0",
     "mongoose": "^8.1.2",
-    "nodemon": "^3.0.3",
     "passport": "^0.7.0",
     "passport-google-oauth2": "^0.2.0",
     "passport-linkedin-oauth2": "^2.0.0"
+  },
+  "volta": {
+    "node": "18.12.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
   }
 }

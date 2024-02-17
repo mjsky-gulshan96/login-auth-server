@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const jwt = require('jsonwebtoken');
 const profileModel = require('../model/profileModel');
-
+require('dotenv').config()
 
 router.post('/register', async (req, res) => {
     const { name, email, password } = req.body
@@ -16,40 +16,89 @@ router.post('/register', async (req, res) => {
 })
 
 router.post('/login', async (req, res) => {
-
-    var { email, password, rememberMe } = req.body;
+    let result = {
+        error: false
+    }
+    const { email, password, rememberMe } = req.body;
     const user = await profileModel.findOne({ email: email });
     if (!user) {
-        return res.status(204).json('user not found');
+        result.error = true,
+            result.errorMsg = 'user not found'
+        return res.status(204).json(result);
     } else if (user && user.password !== password) {
-        return res.status(404).json('incorrct password');
+        result.error = true,
+            result.errorMsg = 'incorrct password'
+        return res.status(404).json(result);
     }
 
-    let token = ''
+    // generate a authorization token
+    let auth_token = jwt.sign({ email }, process.env.AUTHORISATION_SECRET, {
+        expiresIn: '5m'
+    })
+    res.cookie('authToken', auth_token, {
+        maxAge: 1000 * 60 * 5,
+        path: '/',
+        sameSite: 'none',
+        httpOnly: true,
+        secure: true
+    })
+    result.auth_token = auth_token
+
+    // generate remember me token
     if (rememberMe) {
-        token = jwt.sign({ email }, 'SECRET_KEY')
-        res.cookie('user', token, {
-            secure: true,
-            maxAge: 1 * 24 * 60 * 60 * 1000,
-            httpOnly: false
+        let remeber_token = jwt.sign({ email, password }, process.env.REMEMBER_ME_SECRET, {
+            expiresIn: '5m'
         })
+        res.cookie('rememberMe', remeber_token, {
+            maxAge: 1000 * 60 * 10,
+            path: '/',
+            sameSite: 'none',
+            httpOnly: true,
+            secure: true
+        })
+        // req.session.remeber_token = remeber_token
+        result.remeber_token = remeber_token
     }
-    res.status(200).json(user)
+    result.user = user
+    res.status(200).json(result)
 })
 
 router.get('/logout', (req, res) => {
+    let authToken = req.header('authToken');
+    let remeber_token = req.header('rememberMe');
+    if (!authToken) {
+        let cookies = req.header('Cookie');
+        if (cookies && cookies.includes('rememberMe')) {
+            let authTokenPair = cookies.split(';')[0]
+            authToken = authTokenPair.split('=')[1]
+        } else if (cookies) {
+            authToken = cookies.split('=')[1]
+        }
+    }
 
-    let userToken = req.header('userToken');
-    let passportSession = req.session.passport;
-    if (!userToken && !passportSession) {
+    if (!authToken) {
         return res.status(404).json('UnAuthorised Request')
     }
-    if (userToken) {
-        res.clearCookie('user', {
-            httpOnly: false,
-            secure: true,
-            sameSite: 'none'
-        })
+    // clear auth token
+    res.clearCookie('authToken')
+    res.clearCookie('rememberMe')
+
+    res.status(200).json('you are logged out')
+
+})
+
+router.get('/logout/passport', (req, res) => {
+    let passportSession = req.session.passport;
+    let auth_token = req.header('auth_token');
+    let remeber_token = req.header('remeber_token');
+
+    if (!auth_token && !passportSession) {
+        return res.status(404).json('UnAuthorised Request')
+    }
+
+
+    if (auth_token) {
+        jwt.destroy(auth_token)
         res.status(200).json('user logged out');
     } else if (passportSession) {
         req.session.destroy(function (err) {
@@ -59,5 +108,6 @@ router.get('/logout', (req, res) => {
         });
     }
 })
+
 
 module.exports = router;

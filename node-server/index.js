@@ -27,9 +27,8 @@ server.use(cors({
     origin: true
 }))
 server.use(session({
-    secret: 'jbdiauedhiuqdhwoadba',
+    secret: process.env.EXPRESS_SESSION,
     saveUninitialized: false,
-
 }))
 
 // passport setup 
