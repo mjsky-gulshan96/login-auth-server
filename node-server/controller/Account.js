@@ -80,7 +80,10 @@ router.get('/logout', (req, res) => {
         return res.status(404).json('UnAuthorised Request')
     }
     // clear auth token
-    res.clearCookie('authToken')
+    res.clearCookie('authToken', {
+        domain: 'http://localhost:5173',
+        path: '/'
+    })
     res.clearCookie('rememberMe')
 
     res.status(200).json('you are logged out')

@@ -24,11 +24,12 @@ mongoose.connect(process.env.DATABASE).then(() => {
 server.use(express.json())
 server.use(cors({
     credentials: true,
-    origin: true
+    origin: process.env.FRONTEND_SERVER
 }))
 server.use(session({
     secret: process.env.EXPRESS_SESSION,
     saveUninitialized: false,
+    resave: false
 }))
 
 // passport setup 
