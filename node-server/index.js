@@ -26,11 +26,16 @@ server.use(cors({
     credentials: true,
     origin: process.env.FRONTEND_SERVER
 }))
-server.use(session({
+const sessionObj = {
     secret: process.env.EXPRESS_SESSION,
     saveUninitialized: false,
     resave: false
-}))
+}
+if (server.get('env') === 'production') {
+    server.set('trust proxy', 1)
+    sessionObj.cookie.secure = true // serve secure cookies
+}
+server.use(session(sessionObj))
 
 // passport setup 
 server.use(passport.initialize());

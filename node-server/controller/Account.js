@@ -37,27 +37,26 @@ router.post('/login', async (req, res) => {
     })
     res.cookie('authToken', auth_token, {
         maxAge: 1000 * 60 * 5,
-        path: '/',
         sameSite: 'none',
         httpOnly: true,
         secure: true
     })
     result.auth_token = auth_token
-
+    req.session.authToken = auth_token
     // generate remember me token
     if (rememberMe) {
         let remeber_token = jwt.sign({ email, password }, process.env.REMEMBER_ME_SECRET, {
-            expiresIn: '5m'
+            expiresIn: '10m'
         })
         res.cookie('rememberMe', remeber_token, {
             maxAge: 1000 * 60 * 10,
-            path: '/',
             sameSite: 'none',
             httpOnly: true,
             secure: true
         })
         // req.session.remeber_token = remeber_token
         result.remeber_token = remeber_token
+        req.session.rememberMe = remeber_token
     }
     result.user = user
     res.status(200).json(result)
@@ -66,25 +65,30 @@ router.post('/login', async (req, res) => {
 router.get('/logout', (req, res) => {
     let authToken = req.header('authToken');
     let remeber_token = req.header('rememberMe');
-    if (!authToken) {
-        let cookies = req.header('Cookie');
-        if (cookies && cookies.includes('rememberMe')) {
-            let authTokenPair = cookies.split(';')[0]
-            authToken = authTokenPair.split('=')[1]
-        } else if (cookies) {
-            authToken = cookies.split('=')[1]
-        }
-    }
 
-    if (!authToken) {
-        return res.status(404).json('UnAuthorised Request')
+    if (req.session.authToken) {
+        // clear auth token
+        res.clearCookie('authToken')
+        res.clearCookie('rememberMe')
+
+        // if not able to clear the cookie in prod, set cookie for 1 sec
+        res.cookie('authToken', '', {
+            maxAge: 1000 * 2,
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none'
+        })
+        res.cookie('rememberMe', '', {
+            maxAge: 10008 * 2,
+            secure: true,
+            httpOnly: true,
+            sameSite: 'none'
+        })
+
+        // clear token from express session
+        delete req.session.authToken
+        delete req.session.rememberMe
     }
-    // clear auth token
-    res.clearCookie('authToken', {
-        domain: 'http://localhost:5173',
-        path: '/'
-    })
-    res.clearCookie('rememberMe')
 
     res.status(200).json('you are logged out')
 

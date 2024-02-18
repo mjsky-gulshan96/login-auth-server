@@ -7,13 +7,19 @@ router.get('/profile', async (req, res) => {
     let result = {
         error: false
     }
+    if (!req.session.authToken) {
+        return res.status(401).json('Unauthorised Request')
+    }
     let cookies = req.header('Cookie');
-    let authToken;
-    if (cookies && cookies.includes('rememberMe')) {
-        let authTokenPair = cookies.split(';')[0]
-        authToken = authTokenPair.split('=')[1]
-    } else if (cookies) {
-        authToken = cookies.split('=')[1]
+    let authToken, authSubstr;
+    if (cookies.includes('authToken')) {
+        let start = cookies.indexOf('authToken')
+        let end = cookies.indexOf(';', start);
+        authSubstr = cookies.substring(start, end)
+    }
+
+    if (authSubstr.includes('authToken')) {
+        authToken = authSubstr.split('=')[1];
     }
 
     if (!authToken) {
