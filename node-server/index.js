@@ -33,7 +33,7 @@ const sessionObj = {
 }
 if (server.get('env') === 'production') {
     server.set('trust proxy', 1)
-    sessionObj.cookie.secure = true // serve secure cookies
+    sessionObj.cookie = { secure: true } // serve secure cookies
 }
 server.use(session(sessionObj))
 
