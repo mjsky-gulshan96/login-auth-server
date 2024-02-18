@@ -31,10 +31,7 @@ const sessionObj = {
     saveUninitialized: false,
     resave: false
 }
-if (server.get('env') === 'production') {
-    server.set('trust proxy', 1)
-    sessionObj.cookie = { secure: true } // serve secure cookies
-}
+
 server.use(session(sessionObj))
 
 // passport setup 
